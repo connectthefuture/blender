@@ -132,17 +132,17 @@ ccl_device_inline bool triangle_intersect(KernelGlobals *kg,
 	const float3 C = make_float3(tri_c.x - P.x, tri_c.y - P.y, tri_c.z - P.z);
 #endif
 
-	const float A_kx = IDX(A, kx), A_ky = IDX(A, ky), A_kz = IDX(A, kz);
-	const float B_kx = IDX(B, kx), B_ky = IDX(B, ky), B_kz = IDX(B, kz);
-	const float C_kx = IDX(C, kx), C_ky = IDX(C, ky), C_kz = IDX(C, kz);
+	const float A_kz = IDX(A, kz);
+	const float B_kz = IDX(B, kz);
+	const float C_kz = IDX(C, kz);
 
 	/* Perform shear and scale of vertices. */
-	const float Ax = A_kx - Sx * A_kz;
-	const float Ay = A_ky - Sy * A_kz;
-	const float Bx = B_kx - Sx * B_kz;
-	const float By = B_ky - Sy * B_kz;
-	const float Cx = C_kx - Sx * C_kz;
-	const float Cy = C_ky - Sy * C_kz;
+	const float Ax = IDX(A, kx) - Sx * A_kz;
+	const float Ay = IDX(A, ky) - Sy * A_kz;
+	const float Bx = IDX(B, kx) - Sx * B_kz;
+	const float By = IDX(B, ky) - Sy * B_kz;
+	const float Cx = IDX(C, kx) - Sx * C_kz;
+	const float Cy = IDX(C, ky) - Sy * C_kz;
 
 	/* Calculate scaled barycentric coordinates. */
 	float U = Cx * By - Cy * Bx;
@@ -217,25 +217,32 @@ ccl_device_inline void triangle_intersect_subsurface(
 	const float Sy = isect_precalc->Sy;
 	const float Sz = isect_precalc->Sz;
 
+
 	/* Calculate vertices relative to ray origin. */
+#ifdef __KERNEL_OPENCL__
+ 	const float3 A = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+0).xyz - P,
+ 	             B = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+1).xyz - P,
+ 	             C = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+2).xyz - P;
+#else
 	const float4 tri_a = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+0),
 	             tri_b = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+1),
 	             tri_c = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+2);
 	const float3 A = make_float3(tri_a.x - P.x, tri_a.y - P.y, tri_a.z - P.z);
 	const float3 B = make_float3(tri_b.x - P.x, tri_b.y - P.y, tri_b.z - P.z);
 	const float3 C = make_float3(tri_c.x - P.x, tri_c.y - P.y, tri_c.z - P.z);
+#endif
 
-	const float A_kx = IDX(A, kx), A_ky = IDX(A, ky), A_kz = IDX(A, kz);
-	const float B_kx = IDX(B, kx), B_ky = IDX(B, ky), B_kz = IDX(B, kz);
-	const float C_kx = IDX(C, kx), C_ky = IDX(C, ky), C_kz = IDX(C, kz);
+	const float A_kz = IDX(A, kz);
+	const float B_kz = IDX(B, kz);
+	const float C_kz = IDX(C, kz);
 
 	/* Perform shear and scale of vertices. */
-	const float Ax = A_kx - Sx * A_kz;
-	const float Ay = A_ky - Sy * A_kz;
-	const float Bx = B_kx - Sx * B_kz;
-	const float By = B_ky - Sy * B_kz;
-	const float Cx = C_kx - Sx * C_kz;
-	const float Cy = C_ky - Sy * C_kz;
+	const float Ax = IDX(A, kx) - Sx * A_kz;
+	const float Ay = IDX(A, ky) - Sy * A_kz;
+	const float Bx = IDX(B, kx) - Sx * B_kz;
+	const float By = IDX(B, ky) - Sy * B_kz;
+	const float Cx = IDX(C, kx) - Sx * C_kz;
+	const float Cy = IDX(C, ky) - Sy * C_kz;
 
 	/* Calculate scaled barycentric coordinates. */
 	float U = Cx * By - Cy * Bx;
