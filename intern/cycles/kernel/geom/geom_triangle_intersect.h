@@ -103,6 +103,12 @@ ccl_device_inline float xor_signmast(float x, int y)
 	return __int_as_float(__float_as_int(x) ^ y);
 }
 
+#ifdef __KERNEL_OPENCL__
+#  define FLOAT3_DIFF(a, b) a.xyz - b.xyz
+#else
+#  define FLOAT3_DIFF(a, b) make_float3(a.x - b.x, a.y - b.y, a.z - b.z);
+#endif
+
 ccl_device_inline bool triangle_intersect(KernelGlobals *kg,
                                           const IsectPrecalc *isect_precalc,
                                           Intersection *isect,
@@ -117,20 +123,15 @@ ccl_device_inline bool triangle_intersect(KernelGlobals *kg,
 	const float Sx = isect_precalc->Sx;
 	const float Sy = isect_precalc->Sy;
 	const float Sz = isect_precalc->Sz;
+        
+        /* Calculate vertices relative to ray origin. */
+        const float4 tri_a = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+0),
+                     tri_b = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+1),
+                     tri_c = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+2);
 
-	/* Calculate vertices relative to ray origin. */
-#ifdef __KERNEL_OPENCL__
- 	const float3 A = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+0).xyz - P,
- 	             B = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+1).xyz - P,
- 	             C = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+2).xyz - P;
-#else
-	const float4 tri_a = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+0),
-	             tri_b = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+1),
-	             tri_c = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+2);
-	const float3 A = make_float3(tri_a.x - P.x, tri_a.y - P.y, tri_a.z - P.z);
-	const float3 B = make_float3(tri_b.x - P.x, tri_b.y - P.y, tri_b.z - P.z);
-	const float3 C = make_float3(tri_c.x - P.x, tri_c.y - P.y, tri_c.z - P.z);
-#endif
+        const float3 A = FLOAT3_DIFF(tri_a, P);
+        const float3 B = FLOAT3_DIFF(tri_b, P);
+        const float3 C = FLOAT3_DIFF(tri_c, P);
 
 	const float A_kz = IDX(A, kz);
 	const float B_kz = IDX(B, kz);
@@ -219,22 +220,17 @@ ccl_device_inline void triangle_intersect_subsurface(
 
 
 	/* Calculate vertices relative to ray origin. */
-#ifdef __KERNEL_OPENCL__
- 	const float3 A = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+0).xyz - P,
- 	             B = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+1).xyz - P,
- 	             C = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+2).xyz - P;
-#else
 	const float4 tri_a = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+0),
 	             tri_b = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+1),
 	             tri_c = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+2);
-	const float3 A = make_float3(tri_a.x - P.x, tri_a.y - P.y, tri_a.z - P.z);
-	const float3 B = make_float3(tri_b.x - P.x, tri_b.y - P.y, tri_b.z - P.z);
-	const float3 C = make_float3(tri_c.x - P.x, tri_c.y - P.y, tri_c.z - P.z);
-#endif
+                     
+        const float3 A = FLOAT3_DIFF(tri_a, P);
+        const float3 B = FLOAT3_DIFF(tri_b, P);
+        const float3 C = FLOAT3_DIFF(tri_c, P);
 
-	const float A_kz = IDX(A, kz);
-	const float B_kz = IDX(B, kz);
-	const float C_kz = IDX(C, kz);
+        const float A_kz = IDX(A, kz);
+        const float B_kz = IDX(B, kz);
+        const float C_kz = IDX(C, kz);
 
 	/* Perform shear and scale of vertices. */
 	const float Ax = IDX(A, kx) - Sx * A_kz;
