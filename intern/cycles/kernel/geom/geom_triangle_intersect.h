@@ -128,7 +128,7 @@ ccl_device_inline bool triangle_intersect(KernelGlobals *kg,
 	const float Sy = isect_precalc->Sy;
 	const float Sz = isect_precalc->Sz;
         
-        /* Calculate vertices relative to ray 
+        /* Calculate vertices relative to ray */
         const float3 A = FLOAT3_DIFF(tri_a, P);
         const float3 B = FLOAT3_DIFF(tri_b, P);
         const float3 C = FLOAT3_DIFF(tri_c, P);
