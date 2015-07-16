@@ -117,6 +117,10 @@ ccl_device_inline bool triangle_intersect(KernelGlobals *kg,
                                           int object,
                                           int triAddr)
 {
+     const float4 tri_a = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+0),
+                     tri_b = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+1),
+                     tri_c = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+2);
+
 	const int kx = isect_precalc->kx;
 	const int ky = isect_precalc->ky;
 	const int kz = isect_precalc->kz;
@@ -124,11 +128,7 @@ ccl_device_inline bool triangle_intersect(KernelGlobals *kg,
 	const float Sy = isect_precalc->Sy;
 	const float Sz = isect_precalc->Sz;
         
-        /* Calculate vertices relative to ray origin. */
-        const float4 tri_a = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+0),
-                     tri_b = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+1),
-                     tri_c = kernel_tex_fetch(__tri_woop, triAddr*TRI_NODE_SIZE+2);
-
+        /* Calculate vertices relative to ray 
         const float3 A = FLOAT3_DIFF(tri_a, P);
         const float3 B = FLOAT3_DIFF(tri_b, P);
         const float3 C = FLOAT3_DIFF(tri_c, P);
